@@ -4,7 +4,8 @@
 -export([init/1,acceptor/2,terminate/3]).
 
 init(_) ->
-    State = case file:consult(node()) of
+    FileName = io_lib:format("~p",[node()]) ++ "-acceptor.log",
+    State = case file:consult(FileName) of
                 {ok, []} ->
                     {0,0,[]};
                 {ok, Terms} -> 
@@ -17,7 +18,7 @@ init(_) ->
                     end;
                 _ -> {0,0,[]}
             end,
-    {ok, Log} = file:open(node(),[write]),
+    {ok, Log} = file:open(FileName,[write]),
     {ok, acceptor, {Log,State}}.
 
 terminate(_,_,{Log,_}) ->

@@ -4,7 +4,8 @@
 -export([init/1,handle_event/3,ready/2,awaitPrepared/2,awaitAccepted/2,terminate/3]).
 
 init([F|Acceptors]) ->
-    NP = case file:consult(node()) of
+    FileName = io_lib:format("~p",[node()]) ++ "-proposer.log",
+    NP = case file:consult(FileName) of
              {ok, []} -> 0;
              {ok, Terms} ->
                  T = lists:last(Terms),
@@ -12,7 +13,7 @@ init([F|Acceptors]) ->
                  T;
              _ -> 0
             end,
-    {ok, Log} = file:open(node(),[write]),
+    {ok, Log} = file:open(FileName,[write]),
     {ok, ready, {Log,F,Acceptors,NP,0,0,[],[]}}.
 
 terminate(_,_,{Log,_,Acceptors,_,_,_,_,_}) ->
