@@ -10,7 +10,7 @@ start_acceptor() ->
     gen_fsm:start_link(acceptor, [], []).
 
 decide(Proposer) ->
-    gen_fsm:send_event(Proposer,{propose,self()}),
+    gen_fsm:send_all_state_event(Proposer,{propose,self()}),
     receive
         stopped ->
             none;
@@ -29,7 +29,7 @@ test(F,Rounds) ->
     Acceptors = lists:map(
                   fun(_) -> {ok, A} = start_acceptor(), A end,
                   lists:seq(1,(2 * F) + 1)),
-    {ok,P} = start_proposer(1,Acceptors),
+    {ok,P} = start_proposer(F,Acceptors),
     timer:tc(paxos, runTests, [P,Rounds]).
 
 testRemotes(Rounds) ->

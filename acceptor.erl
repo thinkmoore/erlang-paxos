@@ -6,22 +6,16 @@
 init(_) ->
     {ok, acceptor, {0,0,[]}}.
 
-acceptor(Event, {NL,NA,VA}) ->
-    case Event of
-        {prepare,Proposer,N} ->
-            gen_fsm:send_event(Proposer,{prepared,NA,VA}),
-            {next_state, acceptor, {max(NL,N),NA,VA}};
-        {accept,Proposer,N,V} ->
-            {NewNL,NewNA,NewVA} = if
-                                N >= NL ->
-                                    {N,N,V};
-                                true ->
-                                    {NL,NA,VA}
-                            end,
-            gen_fsm:send_event(Proposer,{accepted,NewNA}),
-            {next_state, acceptor, {NewNL,NewNA,NewVA}};
-        {decided,V} ->
-            {next_state, acceptor, {NL,NA,[]}};
-        stop ->
-            {stop, normal, {NL,NA,VA}}
-    end.
+acceptor({prepare,Proposer,N}, {NL,NA,VA}) ->
+    gen_fsm:send_event(Proposer,{prepared,NA,VA}),
+    {next_state, acceptor, {max(NL,N),NA,VA}};
+acceptor({accept,Proposer,N,V}, {NL,_,_}) when N >= NL ->
+    gen_fsm:send_event(Proposer,{accepted,N}),
+    {next_state, acceptor, {N,N,V}};
+acceptor({accept,Proposer,_,_}, {NL,NA,VA}) ->
+    gen_fsm:send_event(Proposer,{accepted,NA}),
+    {next_state, acceptor, {NL,NA,VA}};
+acceptor({decided,_}, {NL,NA,_}) ->
+    {next_state, acceptor, {NL,NA,[]}};
+acceptor(stop,{NL,NA,VA}) ->
+    {stop, normal, {NL,NA,VA}}.
