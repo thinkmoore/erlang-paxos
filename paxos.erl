@@ -1,7 +1,7 @@
 -module(paxos).
 
 -export([start_proposer/2,start_acceptor/0,decide/1]).
--export([test/2,runTests/2,testRemotes/1]).
+-export([test/1,runTests/2]).
 
 start_proposer(F,Acceptors) ->
     gen_fsm:start_link(proposer, [F|Acceptors], []).
@@ -22,19 +22,19 @@ decide(Proposer) ->
     end.
 
 runTests(P,Rounds) ->
-    lists:foreach(fun(_) -> decide(P) end, lists:seq(1,Rounds)),
+    lists:foreach(fun(_) -> 
+                          V = decide(P),
+                          io:fwrite("Decided on ~w~n", [V])
+                  end,
+                  lists:seq(1,Rounds)),
     ok.
 
-test(F,Rounds) ->
-    Acceptors = lists:map(
-                  fun(_) -> {ok, A} = start_acceptor(), A end,
-                  lists:seq(1,(2 * F) + 1)),
+test(Rounds) ->
+    {Responses,_} = rpc:multicall(paxos,start_acceptor,[]),
+    Acceptors = lists:map(fun({ok,A}) -> A end, Responses),
+    Count = length(Acceptors),
+    F = (Count div 2) + 1,
+    io:fwrite("Starting paxos test with ~w acceptors, F = ~w~n", [Count,F]),
     {ok,P} = start_proposer(F,Acceptors),
-    timer:tc(paxos, runTests, [P,Rounds]).
-
-testRemotes(Rounds) ->
-    {ok,A1} = rpc:call('a1@localhost', paxos, start_acceptor, []),
-    {ok,A2} = rpc:call('a2@localhost', paxos, start_acceptor, []),
-    {ok,A3} = rpc:call('a3@localhost', paxos, start_acceptor, []),
-    {ok,P} = start_proposer(1,[A1,A2,A3]),
-    timer:tc(paxos, runTests, [P,Rounds]).
+    timer:tc(paxos, runTests, [P,Rounds]),
+    gen_fsm:send_all_state_event(P,stop).
