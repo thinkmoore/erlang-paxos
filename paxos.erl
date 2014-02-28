@@ -36,5 +36,6 @@ test(Rounds) ->
     F = (Count div 2) + 1,
     io:fwrite("Starting paxos test with ~w acceptors, F = ~w~n", [Count,F]),
     {ok,P} = start_proposer(F,Acceptors),
-    timer:tc(paxos, runTests, [P,Rounds]),
-    gen_fsm:send_all_state_event(P,stop).
+    Out = timer:tc(paxos, runTests, [P,Rounds]),
+    gen_fsm:send_all_state_event(P,stop),
+    Out.
