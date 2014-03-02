@@ -7,10 +7,10 @@ erl -sname n2@localhost
 ```
 
 Pick one of your nodes to be the master, say ```n1@localhost```.
-On the other nodes, run ```net_adm:ping(n1@localhost)``` to make
+On the other nodes, run ```net_adm:ping(n1@localhost).``` to make
 ```n1``` aware of the nodes presence.
 
-Then on ```n1``` run ```paxos:test(Rounds)``` where ```Rounds``` is
+Then on ```n1``` run ```paxos:test(Rounds).``` where ```Rounds``` is
 the number of decisions you want to make. The test will run an acceptor
 on every node including the proposer and calculate the appropriate F.
 
